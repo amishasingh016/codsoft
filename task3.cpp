@@ -1,169 +1,298 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <algorithm>
-#include <iomanip>
-#include <numeric>
+#include<iostream>
+#include<fstream>
+#include<string.h>
+#include<cstdlib>
+#include<cstdio>
+#include<iomanip>
+
 using namespace std;
 
-// ANSI color escape codes
-#define RESET_COLOR "\033[0m"
-#define BLUE_COLOR "\033[34m"
-#define WHITE_COLOR "\033[37m"
-#define CYAN_COLOR "\033[36m"
-#define GREEN_COLOR "\033[32m"
-#define YELLOW_COLOR "\033[33m"
-#define RED_COLOR "\033[31m"
-#define MAGENTA_COLOR "\033[35m"
-#define BOLD "\033[1m"
 
-// Function prototype
-void saveStudentDataToCSV(const vector<string>& studentNames, const vector<int>& studentGrades);
+void write_task();
+void read_task(int);
+void remove_task();
+void modify_task(int);
+void getch();
+int ret_task_no();
 
-// Function to display the colorful menu
-void displayMenu() {
-    cout << MAGENTA_COLOR << BOLD << "------------------------" << endl;
-    cout << "\tOPTIONS" << endl;
-    cout << "------------------------" << endl;
-    cout << BLUE_COLOR << "1. " << RESET_COLOR << "Add Student Grade" << endl;
-    cout << WHITE_COLOR << "2. " << RESET_COLOR << "Display Highest, Average, and Lowest Grades" << endl;
-    cout << BLUE_COLOR << "3. " << RESET_COLOR << "Edit Student Grades" << endl;
-    cout << WHITE_COLOR << "4. " << RESET_COLOR << "Delete Student Grades" << endl;
-    cout << BLUE_COLOR << "5. " << RESET_COLOR << "Exit" << endl;
-    cout << "Enter your choice: ";
+class todo
+{
+	char task_name[80];
+	int task_no = 0;
+	int check;
+
+public:
+	void create_task();
+	void show_task();
+	void check_task();
+	int Rtask_no() {return task_no;}
+	int Rcheck() {return check;}
+};
+
+void todo::create_task()
+{
+	cin.ignore();
+	while (1)
+	{
+		system("clear");
+		cout << "\n\n\t\tEnter task : ";
+		cin.getline(task_name, 80);
+		if (strlen(task_name) != 0)
+			break;
+		else
+			cout << "\n\n\t\t!!! Task can't be empty !!!";
+	}
+
+	task_no = ret_task_no() + 1;
+	check = -1;
 }
 
-// Function to save student data to a CSV file
-void saveStudentDataToCSV(const vector<string>& studentNames, const vector<int>& studentGrades) {
-    ofstream outputFile("student_data.csv");
-    if (!outputFile.is_open()) {
-        cout << RED_COLOR << "Failed to open the CSV file for writing." << RESET_COLOR << endl;
-        return;
-    }
-
-    outputFile << "Name,Grade" << endl; // CSV header
-
-    for (size_t i = 0; i < studentNames.size(); ++i) {
-        outputFile << studentNames[i] << "," << studentGrades[i] << endl;
-    }
-
-    outputFile.close();
-    cout << GREEN_COLOR << "Student data has been saved to student_data.csv." << RESET_COLOR << endl;
+void todo::show_task()
+{
+	string task_checkbox = " [ ] ";
+	if (check == 1)
+		task_checkbox = " [✓] ";
+	cout << "\t\t    " << setw(2) << task_no << task_checkbox << "---- " << task_name << "\n";
 }
 
-int main() {
-    cout << "\e[1;35m==============================================================================================================================================\n";
-cout << "\t\t\t\e[1;35m\t\t\t\tStudent Grading System" << endl;
-cout << "\e[1;35m==============================================================================================================================================\n\n" << "\e[0m" << endl;
+void todo::check_task()
+{
+	check = (-1) * check;
+}
 
-    vector<string> studentNames;
-    vector<int> studentGrades;
+void write_task()
+{
+	todo td;
+	ofstream file;
 
-    while (true) {
-        displayMenu(); // Display the colorful menu at the start of each loop iteration
+	system("clear");
+	td.create_task();
+	file.open("tasks.dat", ios::app | ios::binary);
 
-        int choice;
-        cin >> choice;
+	file.write((char*)&td, sizeof(todo));
 
-        switch (choice) {
-            case 1: // Add Student Grade
-                {
-                    int numStudents;
-                    cout << YELLOW_COLOR << "Enter the number of students: " << RESET_COLOR;
-                    cin >> numStudents;
+	file.close();
 
-                    for (int i = 0; i < numStudents; ++i) {
-                        string name;
-                        int grade;
+}
 
-                        cout << YELLOW_COLOR << "Enter the name of student " << (i + 1) << ": " << RESET_COLOR;
-                        cin.ignore();
-                        getline(cin, name);
+void read_task(int s = 0)
+{
+	todo td;
+	ifstream file;
+	int total, completed;
+	total = completed = 0;
+	file.open("tasks.dat", ios::binary);
+	system("clear");
+	cout << "\n\n\t\t   Task No. \tTask title";
+	cout << "\n\t\t  ==================================\n";
+	while (file.read((char*)&td, sizeof(todo)))
+	{
+		td.show_task();
+		total++;
+		if (td.Rcheck() == 1)
+			completed++;
+	}
+	file.close();
+	if (s == 1)
+	{
+		cout << "\n\n\t\t\t======================";
+		cout << "\n\t\t\tTotal Tasks ------ " << setw(2) << total;
+		cout << "\n\t\t\tCompleted   ------ " << setw(2) << completed;
+		cout << "\n\t\t\tRemaining   ------ " << setw(2) << total - completed;
+		cout << "\n\t\t\t======================";
+	}
 
-                        cout << YELLOW_COLOR << "Enter grade for " << name << ": " << RESET_COLOR;
-                        cin >> grade;
+}
 
-                        studentNames.push_back(name);
-                        studentGrades.push_back(grade);
-                    }
-                    saveStudentDataToCSV(studentNames, studentGrades); // Save data to CSV after adding students
-                }
-                break;
-            case 2: // Display Highest, Average, and Lowest Grades
-                {
-                    if (studentNames.empty()) {
-                        cout << RED_COLOR << "No student data available." << RESET_COLOR << endl;
-                    } else {
-                        int highestGrade = *max_element(studentGrades.begin(), studentGrades.end());
-                        int lowestGrade = *min_element(studentGrades.begin(), studentGrades.end());
-                        double averageGrade = static_cast<double>(accumulate(studentGrades.begin(), studentGrades.end(), 0)) / studentNames.size();
 
-                        cout << GREEN_COLOR << "Highest Grade: " << RESET_COLOR << highestGrade << endl;
-                        cout << GREEN_COLOR << "Average Grade: " << RESET_COLOR << fixed << setprecision(2) << averageGrade << endl;
-                        cout << GREEN_COLOR << "Lowest Grade: " << RESET_COLOR << lowestGrade << endl;
-                    }
-                }
-                break;
-            case 3: // Edit Student Grades
-                {
-                    if (studentNames.empty()) {
-                        cout << RED_COLOR << "No student data available." << RESET_COLOR << endl;
-                    } else {
-                        cout << YELLOW_COLOR << "Enter the name of the student to edit grades: " << RESET_COLOR;
-                        string searchName;
-                        cin.ignore();
-                        getline(cin, searchName);
+int ret_task_no()
+{
+	todo td;
+	ifstream file;
 
-                        bool found = false;
-                        for (size_t i = 0; i < studentNames.size(); ++i) {
-                            if (studentNames[i] == searchName) {
-                                cout << YELLOW_COLOR << "Enter the new grade for " << searchName << ": " << RESET_COLOR;
-                                int newGrade;
-                                cin >> newGrade;
-                                studentGrades[i] = newGrade;
-                                found = true;
-                                break;
-                            }
-                        }
+	int tasknum;
 
-                        if (!found) {
-                            cout << RED_COLOR << "Student not found." << RESET_COLOR << endl;
-                        }
-                        saveStudentDataToCSV(studentNames, studentGrades); // Save data to CSV after editing grades
-                    }
-                }
-                break;
-            case 4: // Delete Student Grades
-                {
-                    if (studentNames.empty()) {
-                        cout << RED_COLOR << "No student data available." << RESET_COLOR << endl;
-                    } else {
-                        cout << YELLOW_COLOR << "Enter the name of the student to delete: " << RESET_COLOR;
-                        string deleteName;
-                        cin.ignore();
-                        getline(cin, deleteName);
+	file.open("tasks.dat", ios::binary);
 
-                        for (size_t i = 0; i < studentNames.size(); ++i) {
-                            if (studentNames[i] == deleteName) {
-                                studentNames.erase(studentNames.begin() + i);
-                                studentGrades.erase(studentGrades.begin() + i);
-                                cout << RED_COLOR << "Student " << deleteName << " has been deleted." << RESET_COLOR << endl;
-                                saveStudentDataToCSV(studentNames, studentGrades); // Save data to CSV after deleting a student
-                                break;
-                            }
-                        }
-                    }
-                }
-                break;
-            case 5: // Exit
-                saveStudentDataToCSV(studentNames, studentGrades); // Save data to CSV before exiting
-                cout << MAGENTA_COLOR << "Exiting the program. Goodbye!" << RESET_COLOR << endl;
-                return 0;
-            default:
-                cout << RED_COLOR << "Invalid choice. Please enter a valid option." << RESET_COLOR << endl;
-                break;
-        }
-    }
-return 0;
+	if (!file)
+	{
+		tasknum = 0;
+	}
+	else
+	{
+		while (file.read((char*)&td, sizeof(todo)))
+		{
+			tasknum = td.Rtask_no();
+		}
+	}
+	file.close();
+	return tasknum;
+}
+
+
+void modify_task(int n)
+{
+	todo td;
+	fstream file;
+	int flag = 0;
+
+	file.open("tasks.dat", ios::binary | ios::out | ios::in);
+	if (!file)
+	{
+		cout << "!!!! Error : Failed to open the file !!!!";
+		return;
+	}
+
+	while (file.read((char*)&td, sizeof(todo)) && flag == 0 )
+	{
+		if (td.Rtask_no() == n)
+		{
+			td.check_task();
+			int pos = (-1) * sizeof(todo);
+			file.seekp(pos, ios::cur);
+			file.write((char*)&td, sizeof(todo));
+			flag = 1;
+		}
+	}
+	file.close();
+	if (flag == 0)
+	{
+		cout << "\n\n\t\t\t!!!!!!Not Found!!!!!!";
+		getch();
+	}
+
+}
+
+void remove_task(int n)
+{
+	todo td;
+	fstream ifile, ofile;
+	int flag = 0;
+
+	ifile.open("tasks.dat", ios::binary | ios::in);
+	ofile.open("temp.dat", ios::binary | ios::out);
+	if (!ifile)
+	{
+		cout << "!!!! Error : Failed to open the file !!!!";
+		return;
+	}
+	ifile.seekg(0, ios::beg);
+	if (flag == 0)
+		if (n == -1)
+			while (ifile.read((char*)&td, sizeof(todo)))
+			{	if (td.Rcheck() == -1)
+				{
+					ofile.write((char*)&td, sizeof(todo));
+					flag = 1;
+				}
+			}
+		else
+			while (ifile.read((char*)&td, sizeof(todo)))
+			{
+				if (td.Rtask_no() != n)
+				{
+					ofile.write((char*)&td, sizeof(todo));
+					flag = 1;
+				}
+			}
+	ifile.close();
+	ofile.close();
+	remove("tasks.dat");
+	rename("temp.dat", "tasks.dat");
+	if (flag == 0)
+	{
+		cout << "\n\n\t\t\t!!!!!!Not Found!!!!!!";
+		getch();
+	}
+
+}
+
+void getch()
+{
+	char ch;
+	cout << "\n";
+	cin.ignore();
+	ch = getchar();
+}
+
+int main()
+{
+
+	char ch;
+	do
+	{
+		system("clear");
+		cout << "\n\n\t\t\t\tMain Menu";
+		cout << "\n\n\t\t\t1.Add Task";
+		cout << "\n\n\t\t\t2.Show Tasks";
+		cout << "\n\n\t\t\t3.Manage Tasks";
+		cout << "\n\n\t\t\t4.Remove Tasks";
+		cout << "\n\n\t\t\t5.Exit";
+		cout << "\n\n\n\t\t\tChoose Option(1-5) :  ";
+		cin >> ch;
+
+		switch (ch)
+		{
+		case '1':
+		{
+			write_task();
+			break;
+		}
+		case '2':
+		{
+			read_task(1);
+			getch();
+			break;
+		}
+		case '3':
+		{
+			int n;
+			do
+			{
+				system("clear");
+				read_task();
+				cout << "\n\n\t\t\t[✓] ---- Completed";
+				cout << "\n\t\t\t[ ] ---- Not Completed";
+				cout << "\n\n\tEnter [Task No.] to check/uncheck task ( 0 for exit): ";
+				cin >> n;
+				if (n > 0)
+					modify_task(n);
+			} while (n != 0);
+			break;
+		}
+		case '4':
+		{
+			int n;
+
+			do
+			{
+				system("clear");
+				read_task();
+				cout << "\n\n\t\t\t-1 ---- Remove completed tasks";
+				cout << "\n\t\t\t-2 ---- Remove all tasks";
+				cout << "\n\t\t\t 0 ---- Exit";
+				cout << "\n\n\t\tEnter [Task No.] to remove tasks : ";
+				cin >> n;
+				if (n > 0 || n == -1)
+					remove_task(n);
+				else if (n == -2)
+					remove("tasks.dat");
+				else if (n == 0)
+					break;
+				else
+					cout << "\n\n\t\t\t!!!!! Invalid input !!!!!";
+
+			} while (n != -2);
+			break;
+		}
+		case '5':
+		{
+			exit(0);
+		}
+		default:
+			cout << "\n\t\t\t!!!!!! Invalid Input !!!!!!!";
+		}
+	} while (ch != '5');
+
+	return 0;
 }
